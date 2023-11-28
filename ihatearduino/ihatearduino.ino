@@ -53,11 +53,14 @@ void loop() {
       lcd.setCursor(0, 1);
       phoneNumber = "";
       Serial.println("Clear Display");
-    } else if (key == 'B' && !isBKeyPressed) {
+    } if (key == 'B' && !isBKeyPressed) {
       // Start 'B' key loop if 'B' is pressed and loop is not already running
       isBKeyPressed = true;
       Serial.println("B key pressed");
-    } else if (key != '*' && key != '#' && key != 'B') {
+      checkSensors(); // Call checkSensors() immediately upon 'B' key press
+    }
+
+    else if (key != '*' && key != '#' && key != 'B') {
       // Handle keypad input except for '*', '#', and 'B'
       if (isBKeyPressed) {
         // If 'B' key loop is active
@@ -85,19 +88,24 @@ void loop() {
             lcd.setCursor(phoneNumber.length(), 1);
             Serial.println("Deleted last digit");
           }
-        } else if (key == 'A') {
-          if (phoneNumber.length() > 0) {
-            // Process the entered phone number
-            Serial.print("Entered phone number: ");
-            Serial.println(phoneNumber);
-            lcd.clear();
-            lcd.print("Complete");
-            delay(2000);
-            lcd.clear();
-            lcd.print("Enter your phone");
-            lcd.setCursor(0, 1);
-            phoneNumber = "";
-          }
+        }  else if (key == 'A') {
+  if (phoneNumber.length() > 0) {
+    // Process the entered phone number
+    Serial.print("Entered phone number: ");
+    Serial.println(phoneNumber);
+    lcd.clear();
+    lcd.print("Complete");
+    delay(2000);
+    lcd.clear();
+
+    // Save the entered phone number directly without concatenating
+    phoneNumber = ""; // Clear the phoneNumber before saving a new one
+    saveCountToEEPROM(bottleCount, phoneNumber);
+    
+    lcd.print("Enter your phone");
+    lcd.setCursor(0, 1);
+    phoneNumber = "";
+  }
         } else if (key == 'C') {
           // Display the count and phone number on LCD
           displayInfoOnLCD();
@@ -112,6 +120,8 @@ void loop() {
   if (shouldRunCheckSensors) {
     checkSensors();
   }
+
+  
 }
 
 void checkSensors() {
@@ -129,7 +139,7 @@ void checkSensors() {
 
  
 
-    if (distance > 0 && distance < 20) { // Assuming bottles are detected within 20 cm
+    if (distance > 0 && distance < 50) { // Assuming bottles are detected within 20 cm
       bottleCount++;
       Serial.print("Bottle count: ");
       Serial.println(bottleCount);
@@ -139,7 +149,7 @@ void checkSensors() {
       lcd.print("Bottle count: ");
       lcd.print(bottleCount);
 
-      delay(1000);
+      delay(100);
 
       // Save bottle count to EEPROM
       saveCountToEEPROM(bottleCount, phoneNumber);
@@ -149,23 +159,31 @@ void checkSensors() {
 
 
 void saveCountToEEPROM(int count, String number) {
-  int addressCount = 0; // Change this address to a specific address in EEPROM
-  EEPROM.put(addressCount, count);
-  int addressPhone = addressCount + sizeof(int); // Increment the address by the size of int
+  int address = 0; // Start address in EEPROM
+
+  // Save bottle count
+  EEPROM.put(address, count);
+  address += sizeof(int); // Increment the address by the size of int
+
+  // Save phone number
   for (unsigned int i = 0; i < number.length(); ++i) {
-    EEPROM.put(addressPhone + i, number[i]);
+    EEPROM.put(address + i, number[i]);
   }
-  EEPROM.put(addressPhone + number.length(), '\0');
+  EEPROM.put(address + number.length(), '\0'); // Null-terminate the phone number
 }
 
 void readCountFromEEPROM() {
-  int addressCount = 0; // Change this address to the same address used in saveCountToEEPROM
-  EEPROM.get(addressCount, bottleCount);
-  int addressPhone = addressCount + sizeof(int); // Increment the address by the size of int
+  int address = 0; // Start address in EEPROM
+
+  // Read bottle count
+  EEPROM.get(address, bottleCount);
+  address += sizeof(int); // Increment the address by the size of int
+
+  // Read phone number
   String tempPhone = "";
   char ch;
   do {
-    EEPROM.get(addressPhone + tempPhone.length(), ch);
+    EEPROM.get(address + tempPhone.length(), ch);
     if (ch != '\0') {
       tempPhone += ch;
     }
@@ -177,6 +195,7 @@ void readCountFromEEPROM() {
   Serial.print("Stored Phone Number: ");
   Serial.println(phoneNumber);
 }
+
 
 void displayInfoOnLCD() {
   lcd.clear();
@@ -193,5 +212,5 @@ void displayInfoOnLCD() {
   delay(7500);
   lcd.clear();
   lcd.print("Enter your phone");
-  	
+
 }
