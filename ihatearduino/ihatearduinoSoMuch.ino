@@ -4,10 +4,11 @@
 #include <Keypad.h>
 
 String phoneNumber = "";
+bool continueCheckSensors = false;
 
 const int trigPin = 3;
 const int echoPin = 2;
-int bottleCount = 1;
+int bottleCount = 0;
 const byte ROWS = 4;
 const byte COLS = 4;
 
@@ -29,7 +30,7 @@ byte rowPins[ROWS] = {11, 10, 9, 8};
 byte colPins[COLS] = {7, 6, 5, 4};
 Keypad keypad = Keypad(makeKeymap(customKeymap), rowPins, colPins, ROWS, COLS);
 
-#define MAX_PHONES 100000000000000000
+#define MAX_PHONES 10000000000000000000000
 
 struct PhoneData {
   String phoneNumber;
@@ -53,7 +54,7 @@ void updatePhoneData(String number, int count) {
   if (index != -1) {
     phoneData[index].count += count;
   } else {
-    if (phoneDataSize == MAX_PHONES) {  // Fix the condition here
+    if (phoneDataSize < MAX_PHONES) {  // Fix the condition here
       phoneData[phoneDataSize].phoneNumber = number;
       phoneData[phoneDataSize].count = count;
       phoneDataSize++;
@@ -78,15 +79,9 @@ void loop() {
   char key = keypad.getKey();
 
   if (key != NO_KEY) {
-    if (key == '*') {
-      lcd.clear();
-      bottleCount = 0;
-      lcd.print("Enter your phone:");
-      lcd.setCursor(0, 1);
-      phoneNumber = "";
-      Serial.println("Clear Display");
-    } else if (key == 'B') {
+    if (key == 'B') {
       Serial.println("B key pressed");
+      continueCheckSensors = true;
       checkSensors();
     } else if (key == '#') {
       displayInfoOnLCD();
@@ -130,7 +125,9 @@ void loop() {
 }
 
 void checkSensors() {
-  for (int i = 0; i < 90; i++) {
+  while (continueCheckSensors) {
+    char key = keypad.getKey(); // Move this line inside the loop
+
     unsigned long duration, distance;
 
     digitalWrite(trigPin, LOW);
@@ -152,21 +149,39 @@ void checkSensors() {
       lcd.print("Bottle count: ");
       lcd.print(bottleCount);
 
-      delay(100);
+      delay(350);
+      if (bottleCount > 0) {
+        // Save bottle count to EEPROM with unique address based on the phone number
+        saveCountToEEPROM(bottleCount, phoneNumber);
+        updatePhoneData(phoneNumber, bottleCount);
+      }
+    }
 
-      // Save bottle count to EEPROM with unique address based on the phone number
-      saveCountToEEPROM(bottleCount, phoneNumber);
-      updatePhoneData(phoneNumber, bottleCount);
+    if (key != NO_KEY) {
+      if (key == '*') {
+        lcd.clear();
+        bottleCount = 0;
+        lcd.print("Enter your phone:");
+        lcd.setCursor(0, 1);
+        phoneNumber = "";
+        Serial.println("Clear Display");
+        continueCheckSensors = false;
+        break;
+        bottleCount = 0;
+      } else {
+        continueCheckSensors = true;
+      }
     }
   }
 }
+
 
 void saveCountToEEPROM(int count, String number) {
   int phoneIndex = findPhoneNumberIndex(number);
 
   if (phoneIndex == -1) {
     // Phone number not found, add it to EEPROM
-    if (phoneDataSize = MAX_PHONES) {
+    if (phoneDataSize < MAX_PHONES) {
       int address = phoneDataSize * sizeof(PhoneData);
       EEPROM.put(address, PhoneData{number, count});
       phoneDataSize++;
