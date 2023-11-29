@@ -249,26 +249,33 @@
   }
 
   void checkPoints() {
-    int index = findPhoneNumberIndex(phoneNumber);
+  int index = findPhoneNumberIndex(phoneNumber);
 
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Phone: ");
-    lcd.print(phoneNumber);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Phone: ");
+  lcd.print(phoneNumber);
 
-    lcd.setCursor(0, 1);  
-    lcd.print("Total Count: ");
-    int total = (index != -1) ? phoneData[index].count : 0;
+  lcd.setCursor(0, 1);  
+  lcd.print("Total Count: ");
+  
+  if (index != -1) {
+    // Update the total count based on stored data
+    int total = phoneData[index].count;
     lcd.print(total);
 
     Serial.print("Phone: ");
     Serial.print(phoneNumber);
     Serial.print(", Total Count: ");
     Serial.println(total);
-
-    delay(5000);
-    lcd.clear();
-    Serial.println("Clear Check");
-    phoneNumber = "";
-    lcd.print("Enter your phone");
+  } else {
+    // Phone number not found, display 0 as the total count
+    lcd.print("0");
   }
+
+  delay(5000);
+  lcd.clear();
+  Serial.println("Clear Check");
+  phoneNumber = "";
+  lcd.print("Enter your phone");
+}
