@@ -122,57 +122,63 @@ void addNewPhoneNumber(String newNumber) {
     readCountFromEEPROM();
   }
 
-  void loop() {
+ void loop() {
     char key = keypad.getKey();
 
     if (key != NO_KEY) {
-      if (key == 'B') {
-        Serial.println("B key pressed");
-         lcd.clear();
+        if (key == 'B') {
+            Serial.println("B key pressed");
+            lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print("Bottle count: ");
             lcd.print(bottleCount);
             checkSensors();
             continueCheckSensors = true;
-      } else if (key == 'C') {
-        displayTotalCountOnLCD();
-      } else {
-        if (isDigit(key)) {
-          phoneNumber += key;
-          lcd.setCursor(phoneNumber.length() - 1, 1);
-          lcd.print(key);
-          delay(10);
-          Serial.println(key);
-        } else if (key == 'D') {
-          if (phoneNumber.length() > 0) {
-            phoneNumber.remove(phoneNumber.length() - 1);
-            lcd.setCursor(phoneNumber.length(), 1);
-            lcd.print(" ");
-            lcd.setCursor(phoneNumber.length(), 1);
-            Serial.println("Deleted last digit");
-          }
-        } else if (key == 'A') {
-          if (phoneNumber.length() > 0) {
-            Serial.print("Entered phone number: ");
-            Serial.println(phoneNumber);
+        } else if (key == 'C') {
+            displayTotalCountOnLCD();
+        } else {
+            if (isDigit(key) && phoneNumber.length() < 10) { // จำกัดความยาวของเบอร์โทรศัพท์ที่รับเข้ามาไม่เกิน 10 ตัว
+                phoneNumber += key;
+                lcd.setCursor(phoneNumber.length() - 1, 1);
+                lcd.print(key);
+                delay(10);
+                Serial.println(key);
+            } else if (key == 'D') {
+                if (phoneNumber.length() > 0) {
+                    phoneNumber.remove(phoneNumber.length() - 1);
+                    lcd.setCursor(phoneNumber.length(), 1);
+                    lcd.print(" ");
+                    lcd.setCursor(phoneNumber.length(), 1);
+                    Serial.println("Deleted last digit");
+                }
+            } else if (key == 'A') {
+                if (validatePhoneNumber(phoneNumber)) {
+                    Serial.print("Entered phone number: ");
+                    Serial.println(phoneNumber);
 
-            // Save the entered phone number directly without concatenating
-            saveCountToEEPROM(1, phoneNumber);
+                    // Save the entered phone number directly without concatenating
+                    saveCountToEEPROM(1, phoneNumber);
 
-            lcd.clear();
-            lcd.print("Complete");
-            delay(2000);
-            lcd.clear();
+                    lcd.clear();
+                    lcd.print("Complete");
+                    delay(2000);
+                    lcd.clear();
 
-            lcd.print("Enter your phone");
-            lcd.setCursor(0, 1);
-            phoneNumber = "";
-          }
+                    lcd.print("Enter your phone");
+                    lcd.setCursor(0, 1);
+                    phoneNumber = "";
+                } else {
+                    Serial.println("Invalid phone number entered!");
+                    lcd.clear();
+                    lcd.print("Invalid phone number");
+                    delay(2000);
+                    lcd.clear();
+                    lcd.print("Enter your phone");
+                }
+            }
         }
-      } 
     }
-  }
-
+}
 void checkSensors() {
   while (true) {
     char key = keypad.getKey(); // Move this line inside the loop
@@ -343,24 +349,38 @@ int getTotalCount(String number) {
   void checkPoints() {
     int index = findPhoneNumberIndex(phoneNumber);
 
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Phone: ");
-    lcd.print(phoneNumber);
+    if (validatePhoneNumber(phoneNumber)) {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Phone: ");
+        lcd.print(phoneNumber);
 
-    lcd.setCursor(0, 1);  
-    lcd.print("Total Count: ");
-    int total = (index != -1) ? phoneData[index].count : 0;
-    lcd.print(total);
+        lcd.setCursor(0, 1);
+        lcd.print("Total Count: ");
+        int total = (index != -1) ? phoneData[index].count : 0;
+        lcd.print(total);
 
-    Serial.print("Phone: ");
-    Serial.print(phoneNumber);
-    Serial.print(", Total Count: ");
-    Serial.println(total);
+        Serial.print("Phone: ");
+        Serial.print(phoneNumber);
+        Serial.print(", Total Count: ");
+        Serial.println(total);
 
-    delay(5000);
-    lcd.clear();
-    Serial.println("Clear Check");
-    phoneNumber = "";
-    lcd.print("Enter your phone");
-  }
+        delay(5000);
+        lcd.clear();
+        Serial.println("Clear Check");
+        phoneNumber = "";
+        lcd.print("Enter your phone");
+    } else {
+        Serial.println("Invalid phone number entered!");
+        lcd.clear();
+        lcd.print("Invalid phone number");
+        delay(2000);
+        lcd.clear();
+        lcd.print("Enter your phone");
+    }
+}
+
+bool validatePhoneNumber(String number) {
+    // ตรวจสอบว่าเบอร์โทรศัพท์มีความยาว 10 ตัวและประกอบไปด้วยตัวเลขเท่านั้น
+    return (number.length() == 10 && number.toInt() != 0);
+}
