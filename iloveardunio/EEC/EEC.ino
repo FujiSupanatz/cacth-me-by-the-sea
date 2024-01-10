@@ -68,6 +68,24 @@ int sensor1Value, sensor2Value, sensor3Value;
     Serial.println("Old phone number not found!");
   }
 }
+void addNewPhoneNumber(String newNumber) {
+  if (phoneDataSize < MAX_PHONES) {
+    // Check if the new number already exists
+    if (findPhoneNumberIndex(newNumber) == -1) {
+      phoneData[phoneDataSize].phoneNumber = newNumber;
+      phoneData[phoneDataSize].count = 0; // Initialize count to zero for new numbers
+      int address = phoneDataSize * sizeof(PhoneData);
+      EEPROM.put(address, phoneData[phoneDataSize]);
+      phoneDataSize++;
+      Serial.println("New phone number added!");
+    } else {
+      Serial.println("Phone number already exists!");
+    }
+  } else {
+    Serial.println("Maximum phone numbers reached!");
+  }
+}
+
 
   void updatePhoneData(String number, int count) {
   int index = findPhoneNumberIndex(number);
