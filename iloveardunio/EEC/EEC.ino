@@ -123,15 +123,15 @@ int sensor1Value, sensor2Value, sensor3Value;
             checkSensors();
             continueCheckSensors = true;
         } else if (key == 'C') {
-            displayTotalCountOnLCD();
+           displayTotalCountOnLCD();
+            checkPoints();
         } else if (key == '#') {
-            // Reset phone number and display when '#' is pressed
-            lcd.clear();
+           lcd.clear();
             phoneNumber = "";
             lcd.print("Enter your phone:");
             lcd.setCursor(0, 1);
         } else {
-            if (isDigit(key) && phoneNumber.length() < 10) {
+             if (isDigit(key) && phoneNumber.length() < 10) {
                 phoneNumber += key;
                 lcd.setCursor(phoneNumber.length() - 1, 1);
                 lcd.print(key);
