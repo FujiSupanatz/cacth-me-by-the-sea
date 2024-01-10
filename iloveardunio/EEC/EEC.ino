@@ -123,15 +123,9 @@ int sensor1Value, sensor2Value, sensor3Value;
             checkSensors();
             continueCheckSensors = true;
         } else if (key == 'C') {
-           displayTotalCountOnLCD();
-            checkPoints();
-        } else if (key == '#') {
-           lcd.clear();
-            phoneNumber = "";
-            lcd.print("Enter your phone:");
-            lcd.setCursor(0, 1);
+            displayTotalCountOnLCD();
         } else {
-             if (isDigit(key) && phoneNumber.length() < 10) {
+            if (isDigit(key) && phoneNumber.length() < 10) { // จำกัดความยาวของเบอร์โทรศัพท์ที่รับเข้ามาไม่เกิน 10 ตัว
                 phoneNumber += key;
                 lcd.setCursor(phoneNumber.length() - 1, 1);
                 lcd.print(key);
@@ -169,11 +163,11 @@ int sensor1Value, sensor2Value, sensor3Value;
                     lcd.clear();
                     lcd.print("Enter your phone");
                 }
+                
             }
         }
     }
 }
-
 void checkSensors() {
   while (true) {
     char key = keypad.getKey(); // Move this line inside the loop
@@ -239,7 +233,15 @@ void checkSensors() {
 
     delay(350);
 
-  
+    if (key != NO_KEY && key == '#') {
+      lcd.clear();
+      bottleCount = 0;
+      lcd.print("Enter your phone:");
+      lcd.setCursor(0, 1);
+      phoneNumber = "";
+      Serial.println("Clear Display");
+      break; // Break out of the loop
+    }
   }
 }
 
