@@ -76,28 +76,26 @@ int sensor1Value, sensor2Value, sensor3Value;
 
 
   void updatePhoneData(String number, int count) {
-  int index = findPhoneNumberIndex(number);
+    int phoneIndex = findPhoneNumberIndex(number);
 
-  if (index != -1) {
-    // Phone number found, update the count if changed
-    phoneData[index].count += count;
-    int address = index * sizeof(PhoneData);
-    EEPROM.put(address, phoneData[index]);
-  } else {
-    if (phoneDataSize < MAX_PHONES) {
-      // Phone number not found, add it to EEPROM
-      phoneData[phoneDataSize].phoneNumber = number;
-      phoneData[phoneDataSize].count = count;
-      int address = phoneDataSize * sizeof(PhoneData);
-      EEPROM.put(address, phoneData[phoneDataSize]);
-      phoneDataSize++;
+    if (phoneIndex != -1) {
+        // Phone number found, update the count
+        phoneData[phoneIndex].count = count;
+        int address = phoneIndex * sizeof(PhoneData);
+        EEPROM.put(address, phoneData[phoneIndex]);
     } else {
-      Serial.println("Maximum phone numbers reached!");
+        if (phoneDataSize < MAX_PHONES) {
+            // Phone number not found, add it to EEPROM
+            phoneData[phoneDataSize].phoneNumber = number;
+            phoneData[phoneDataSize].count = count;
+            int address = phoneDataSize * sizeof(PhoneData);
+            EEPROM.put(address, phoneData[phoneDataSize]);
+            phoneDataSize++;
+        } else {
+            Serial.println("Maximum phone numbers reached!");
+        }
     }
-  }
 }
-
-
   void setup() {
     Serial.begin(9600);
     lcd.init();
@@ -123,7 +121,7 @@ int sensor1Value, sensor2Value, sensor3Value;
             checkSensors();
             continueCheckSensors = true;
         } else if (key == 'C') {
-            displayTotalCountOnLCD();
+            checkPoints();
         } else {
             if (isDigit(key) && phoneNumber.length() < 10) { // จำกัดความยาวของเบอร์โทรศัพท์ที่รับเข้ามาไม่เกิน 10 ตัว
                 phoneNumber += key;
@@ -162,6 +160,8 @@ int sensor1Value, sensor2Value, sensor3Value;
                     delay(2000);
                     lcd.clear();
                     lcd.print("Enter your phone");
+                    lcd.setCursor(0, 1);
+                    phoneNumber = "";
                 }
                 
             }
@@ -169,128 +169,149 @@ int sensor1Value, sensor2Value, sensor3Value;
     }
 }
 void checkSensors() {
-  while (true) {
-    char key = keypad.getKey(); // Move this line inside the loop
+    while (true) {
+        char key = keypad.getKey(); // Move this line inside the loop
 
-    // Read sensor values inside the loop
-    sensor1Value = digitalRead(sensor1Pin);
-    sensor2Value = digitalRead(sensor2Pin);
-    sensor3Value = digitalRead(sensor3Pin);
+        // Read sensor values inside the loop
+        sensor1Value = digitalRead(sensor1Pin);
+        sensor2Value = digitalRead(sensor2Pin);
+        sensor3Value = digitalRead(sensor3Pin);
 
-    // Read sensor 1
-    if (sensor1Value == LOW) { //!*SENSORS ARE READ LOW*!
-      Serial.println("------------------------");
-      Serial.println("Sensor1 Object Detected!");
-      Serial.println("------------------------");
-      delay(250);
-      bottleCount++;
-      saveCountToEEPROM(bottleCount, phoneNumber);
-      readCountFromEEPROM();
-      Serial.print("Count = ");
-      Serial.println(bottleCount);
+        // Read sensor 1
+        if (sensor1Value == LOW) {
+            Serial.println("------------------------");
+            Serial.println("Sensor1 Object Detected!");
+            Serial.println("------------------------");
+            delay(250);
+            bottleCount++;
+            Serial.print("Count = ");
+            Serial.println(bottleCount);
 
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Bottle count: ");
-        lcd.print(bottleCount);
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Bottle count: ");
+            lcd.print(bottleCount);
+
+            // Save bottle count to EEPROM with unique address based on the phone number
+            addCountToEEPROM(bottleCount, phoneNumber);
+            updatePhoneData(phoneNumber, bottleCount);
+        }
+
+        if (sensor2Value == LOW) {
+            Serial.println("------------------------");
+            Serial.println("Sensor2 Object Detected!");
+            Serial.println("------------------------");
+            delay(250);
+            bottleCount++;
+            Serial.print("Count = ");
+            Serial.println(bottleCount);
+
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Bottle count: ");
+            lcd.print(bottleCount);
+
+            // Save bottle count to EEPROM with unique address based on the phone number
+            addCountToEEPROM(bottleCount, phoneNumber);
+            updatePhoneData(phoneNumber, bottleCount);
+        }
+
+        if (sensor3Value == LOW) {
+            Serial.println("------------------------");
+            Serial.println("Sensor3 Object Detected!");
+            Serial.println("------------------------");
+            delay(250);
+            bottleCount++;
+            Serial.print("Count = ");
+            Serial.println(bottleCount);
+
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Bottle count: ");
+            lcd.print(bottleCount);
+
+            // Save bottle count to EEPROM with unique address based on the phone number
+            addCountToEEPROM(bottleCount, phoneNumber);
+            updatePhoneData(phoneNumber, bottleCount);
+        }
+
+        delay(350);
+
+        if (key != NO_KEY && key == '#') {
+            lcd.clear();
+            bottleCount = 0;
+            lcd.print("Enter your phone:");
+            lcd.setCursor(0, 1);
+            phoneNumber = "";
+            Serial.println("Clear Display");
+            break; // Break out of the loop
+        }
     }
-      if (sensor2Value == LOW) {
-      Serial.println("------------------------");
-      Serial.println("Sensor1 Object Detected!");
-      Serial.println("------------------------");
-      delay(250);
-      bottleCount++;
-      saveCountToEEPROM(bottleCount, phoneNumber);
-      readCountFromEEPROM();
-      Serial.print("Count = ");
-      Serial.println(bottleCount);
-
-      lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Bottle count: ");
-        lcd.print(bottleCount);
-    }
-    
-    if (sensor3Value == LOW) {
-      Serial.println("------------------------");
-      Serial.println("Sensor1 Object Detected!");
-      Serial.println("------------------------");
-      delay(250);
-      bottleCount++;
-      saveCountToEEPROM(bottleCount, phoneNumber);
-      readCountFromEEPROM();
-      Serial.print("Count = ");
-      Serial.println(bottleCount);
-
-      lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Bottle count: ");
-        lcd.print(bottleCount);
-    }
-    // Save bottle count to EEPROM with unique address based on the phone number
-    saveCountToEEPROM(bottleCount, phoneNumber);
-    updatePhoneData(phoneNumber, bottleCount);
-
-    delay(350);
-
-    if (key != NO_KEY && key == '#') {
-      lcd.clear();
-      bottleCount = 0;
-      lcd.print("Enter your phone:");
-      lcd.setCursor(0, 1);
-      phoneNumber = "";
-      Serial.println("Clear Display");
-      break; // Break out of the loop
-    }
-  }
 }
 
 
-  void saveCountToEEPROM(int count, String number) {
-  bool numberExists = false;
-  int phoneIndex = -1;
+void saveCountToEEPROM(int count, String number) {
+    int phoneIndex = findPhoneNumberIndex(number);
 
-  // Check if the phone number exists in the stored data
-  for (int i = 0; i < phoneDataSize; ++i) {
-    if (phoneData[i].phoneNumber == number) {
-      numberExists = true;
-      phoneIndex = i;
-      break;
-    }
-  }
-
-  if (!numberExists) {
-    // Phone number not found, add it to EEPROM if space is available
-    if (phoneDataSize < MAX_PHONES) {
-      int address = phoneDataSize * sizeof(PhoneData);
-      EEPROM.put(address, PhoneData{number, count});
-      phoneData[phoneDataSize] = {number, count}; // Store in RAM as well
-      phoneDataSize++;
+    if (phoneIndex != -1) {
+        // Phone number found, add the count to the existing count
+        phoneData[phoneIndex].count += count;
+        int address = phoneIndex * sizeof(PhoneData);
+        EEPROM.put(address, phoneData[phoneIndex]);
     } else {
-      Serial.println("Maximum phone numbers reached!");
+        // Phone number not found, create a new entry
+        if (phoneDataSize < MAX_PHONES) {
+            phoneData[phoneDataSize].phoneNumber = number;
+            phoneData[phoneDataSize].count = count;
+            int address = phoneDataSize * sizeof(PhoneData);
+            EEPROM.put(address, phoneData[phoneDataSize]);
+            phoneDataSize++;
+        } else {
+            Serial.println("Maximum phone numbers reached!");
+        }
     }
-  } else {
-    // Phone number found, update the count if changed
-    if (phoneData[phoneIndex].count != count) {
-      phoneData[phoneIndex].count = count;
-      int address = phoneIndex * sizeof(PhoneData);
-      EEPROM.put(address, phoneData[phoneIndex]);
-    }
-  }
 }
 
 
-void addCountToEEPROM(int count, String number) {
-  int phoneIndex = findPhoneNumberIndex(number);
 
-  if (phoneIndex != -1) {
-    // Phone number found, add the count to the existing count
-    phoneData[phoneIndex].count += count;
-    int address = phoneIndex * sizeof(PhoneData);
-    EEPROM.put(address, phoneData[phoneIndex]);
-  } else {
-    Serial.println("Phone number not found in EEPROM!");
-  }
+
+void addScoreToPhoneNumber(String number, int newScore) {
+    int index = findPhoneNumberIndex(number);
+
+    if (index != -1) {
+        // Phone number found, add the new score to the existing score
+        phoneData[index].count += newScore;
+        int address = index * sizeof(PhoneData);
+        EEPROM.put(address, phoneData[index]);
+        Serial.println("Score added to existing phone number!");
+    } else {
+        Serial.println("Phone number not found!");
+    }
+}
+
+
+
+// This function is missing in the provided code
+void addCountToEEPROM(int count, String number) {
+    int phoneIndex = findPhoneNumberIndex(number);
+
+    if (phoneIndex != -1) {
+        // Phone number found, add the count to the existing count
+        phoneData[phoneIndex].count += count;
+        int address = phoneIndex * sizeof(PhoneData);
+        EEPROM.put(address, phoneData[phoneIndex]);
+    } else {
+        // Phone number not found, create a new entry
+        if (phoneDataSize < MAX_PHONES) {
+            phoneData[phoneDataSize].phoneNumber = number;
+            phoneData[phoneDataSize].count = count;
+            int address = phoneDataSize * sizeof(PhoneData);
+            EEPROM.put(address, phoneData[phoneDataSize]);
+            phoneDataSize++;
+        } else {
+            Serial.println("Maximum phone numbers reached!");
+        }
+    }
 }
 
   void readCountFromEEPROM() {
@@ -308,21 +329,24 @@ void addCountToEEPROM(int count, String number) {
   }
 }
 
-  void displayTotalCountOnLCD() {
+ void displayTotalCountOnLCD() {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Total Count: ");
-    int total = getTotalCount(phoneNumber); // เรียกใช้ฟังก์ชัน getTotalCount() เพื่อคำนวณจำนวน count ทั้งหมดของหมายเลขโทรศัพท์ที่กำลังใช้งาน
-    lcd.print(total);
+    lcd.print("Phone:");
 
-    Serial.print("Phone: ");
-    Serial.print(phoneNumber);
-    Serial.print(", Total Count: ");
-    Serial.println(total);
+    for (int i = 0; i < phoneDataSize; ++i) {
+        lcd.setCursor(6, i);
+        lcd.print(phoneData[i].phoneNumber);
+        lcd.setCursor(0, i + 1);
+        lcd.print("Count: ");
+        lcd.print(phoneData[i].count);
+    }
 
     delay(7500);
     lcd.clear();
     lcd.print("Enter your phone");
+    lcd.setCursor(0, 1);
+    phoneNumber = "";
 }
 
 int getTotalCount(String number) {
@@ -335,18 +359,24 @@ int getTotalCount(String number) {
     return total;
 }
 
-  void checkPoints() {
+
+ void checkPoints() {
     int index = findPhoneNumberIndex(phoneNumber);
 
     if (validatePhoneNumber(phoneNumber)) {
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Phone: ");
+        lcd.print("Phone:");
         lcd.print(phoneNumber);
 
         lcd.setCursor(0, 1);
         lcd.print("Total Count: ");
-        int total = (index != -1) ? phoneData[index].count : 0;
+
+        // อัปเดตข้อมูลจาก EEPROM
+        readCountFromEEPROM();
+        
+        // นับคะแนนทั้งหมด
+        int total = getTotalCount(phoneNumber);
         lcd.print(total);
 
         Serial.print("Phone: ");
@@ -356,9 +386,9 @@ int getTotalCount(String number) {
 
         delay(5000);
         lcd.clear();
+        lcd.print("Enter your phone");
         Serial.println("Clear Check");
         phoneNumber = "";
-        lcd.print("Enter your phone");
     } else {
         Serial.println("Invalid phone number entered!");
         lcd.clear();
@@ -368,6 +398,7 @@ int getTotalCount(String number) {
         lcd.print("Enter your phone");
     }
 }
+
 
 bool validatePhoneNumber(String number) {
     // ตรวจสอบว่าเบอร์โทรศัพท์มีความยาว 10 ตัวและประกอบไปด้วยตัวเลขเท่านั้น
